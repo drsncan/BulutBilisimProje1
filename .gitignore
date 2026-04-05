@@ -1,0 +1,10 @@
+# .NET Gizlenecekler
+bin/
+obj/
+*.sqlite
+*.db
+
+# React Gizlenecekler
+node_modules/
+dist/
+.env
