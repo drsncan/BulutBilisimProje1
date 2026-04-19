@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import './App.css'
 
+// --- 0. KONFİGÜRASYON ---
+// AWS'den aldığın yeni API adresini buraya tanımlıyoruz.
+const API_BASE_URL = "https://belge-api-dursun-h7gagsgwdgb0djgv.germanywestcentral-01.azurewebsites.net";
+
 function App() {
   // --- 1. GÜVENLİK (LOGIN) STATE'LERİ ---
-  // Sayfa açıldığında tarayıcı hafızasında token var mı diye kontrol ediyoruz
   const [token, setToken] = useState(localStorage.getItem('token') || null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -15,7 +18,6 @@ function App() {
   const [description, setDescription] = useState('')
   const [file, setFile] = useState(null)
 
-  // Eğer token varsa (kullanıcı giriş yapmışsa) belgeleri otomatik çek
   useEffect(() => {
     if (token) {
       fetchDocuments();
@@ -26,15 +28,15 @@ function App() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      // Backend'deki Auth/login adresimize istek atıyoruz
-      const response = await axios.post('https://localhost:7104/api/Auth/login', {
+      // Adres AWS olarak güncellendi
+      const response = await axios.post(`${API_BASE_URL}/Auth/login`, {
         username: username,
         password: password
       });
       
       const alinanToken = response.data.token;
-      setToken(alinanToken); // Token'ı React hafızasına al
-      localStorage.setItem('token', alinanToken); // Token'ı tarayıcı hafızasına al
+      setToken(alinanToken);
+      localStorage.setItem('token', alinanToken);
       
     } catch (error) {
       console.error("Giriş hatası:", error);
@@ -45,11 +47,9 @@ function App() {
   const handleLogout = () => {
     setToken(null);
     localStorage.removeItem('token');
-    setDocuments([]); // Çıkış yapınca ekrandaki belgeleri temizle
+    setDocuments([]);
   }
 
-  // --- 4. GÜVENLİ İSTEKLER İÇİN YARDIMCI FONKSİYON ---
-  // Tüm isteklerin başlığına (header) bu dijital anahtarı ekleyeceğiz
   const getAuthHeaders = () => {
     return {
       headers: {
@@ -58,11 +58,10 @@ function App() {
     }
   }
 
-  // --- 5. CRUD İŞLEMLERİ (TOKEN EKLENMİŞ HALİ) ---
+  // --- 5. CRUD İŞLEMLERİ (AWS ADRESLERİ İLE) ---
   const fetchDocuments = async () => {
     try {
-      // getAuthHeaders() ile anahtarı API'ye gönderiyoruz
-      const response = await axios.get('https://localhost:7104/api/Documents', getAuthHeaders());
+      const response = await axios.get(`${API_BASE_URL}/Documents`, getAuthHeaders());
       setDocuments(response.data);
     } catch (error) {
       console.error("Belgeler çekilirken hata:", error);
@@ -85,10 +84,10 @@ function App() {
     formData.append("File", file);
 
     try {
-      await axios.post('https://localhost:7104/api/Documents', formData, {
+      await axios.post(`${API_BASE_URL}/Documents`, formData, {
         headers: { 
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}` // Yüklerken de anahtarı gönder
+          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -106,7 +105,7 @@ function App() {
     const isConfirmed = window.confirm("Bu belgeyi silmek istediğinize emin misiniz?");
     if (isConfirmed) {
       try {
-        await axios.delete(`https://localhost:7104/api/Documents/${id}`, getAuthHeaders());
+        await axios.delete(`${API_BASE_URL}/Documents/${id}`, getAuthHeaders());
         alert("Belge başarıyla silindi!");
         fetchDocuments();
       } catch (error) {
@@ -116,15 +115,13 @@ function App() {
     }
   }
 
-  // GÜVENLİ İNDİRME FONKSİYONU
   const handleDownload = async (id, fileName) => {
     try {
-       const response = await axios.get(`https://localhost:7104/api/Documents/download/${id}`, {
+       const response = await axios.get(`${API_BASE_URL}/Documents/download/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` },
-          responseType: 'blob' // Gelen verinin bir dosya (blob) olduğunu belirtiyoruz
+          responseType: 'blob'
        });
        
-       // Dosyayı tarayıcıya indirtmek için geçici bir link oluşturup tıklatıyoruz
        const url = window.URL.createObjectURL(new Blob([response.data]));
        const link = document.createElement('a');
        link.href = url;
@@ -138,9 +135,7 @@ function App() {
     }
  }
 
-  // --- EKRAN TASARIMLARI ---
-
-  // DURUM 1: EĞER KULLANICI GİRİŞ YAPMAMIŞSA SADECE GİRİŞ EKRANINI GÖSTER
+  // --- EKRAN TASARIMLARI (DEĞİŞMEDİ) ---
   if (!token) {
     return (
       <div className="container" style={{ maxWidth: '400px', margin: '100px auto', padding: '30px', backgroundColor: '#2a2a2a', borderRadius: '8px', textAlign: 'center' }}>
@@ -148,7 +143,7 @@ function App() {
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
           <input 
             type="text" 
-            placeholder="Kullanıcı Adı (Örn: admin)" 
+            placeholder="Kullanıcı Adı" 
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
@@ -156,7 +151,7 @@ function App() {
           />
           <input 
             type="password" 
-            placeholder="Şifre (Örn: 12345)" 
+            placeholder="Şifre" 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -170,7 +165,6 @@ function App() {
     )
   }
 
-  // DURUM 2: GİRİŞ BAŞARILIYSA ANA SİSTEMİ GÖSTER
   return (
     <div className="container" style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -180,7 +174,6 @@ function App() {
         </button>
       </div>
       
-      {/* BELGE YÜKLEME FORMU */}
       <div style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '8px', marginBottom: '30px', marginTop: '20px' }}>
         <h2>Yeni Belge Yükle</h2>
         <form onSubmit={handleUpload} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -193,7 +186,6 @@ function App() {
         </form>
       </div>
 
-      {/* BELGE LİSTESİ */}
       <div className="document-list">
         <h2>Sistemdeki Belgeler</h2>
         {documents.length === 0 ? (
@@ -208,7 +200,6 @@ function App() {
                   <small style={{ color: '#aaa' }}>Orijinal Dosya: {doc.fileName}</small>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  {/* Yeni güvenli indirme butonu */}
                   <button onClick={() => handleDownload(doc.id, doc.fileName)} style={{ padding: '8px 15px', backgroundColor: '#008CBA', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                     İndir
                   </button>
