@@ -3,6 +3,8 @@
 Bu proje, Bulut Bilişim dersi gereksinimleri doğrultusunda **"Çift Katmanlı Web Uygulaması" (Full-Stack)** mimarisiyle geliştirilmiş, güvenli ve yüksek erişilebilirliğe sahip bir Belge Yönetim Sistemidir (DMS). Kullanıcıların dijital dosyalarını (PDF, Word vb.) güvenle sisteme yükleyebileceği, listeleyebileceği, indirebileceği ve silebileceği uçtan uca bir çözüm sunmaktadır.
 
 ---
+[![Proje Tanıtım Videosu](https://img.youtube.com/vi/myussRHO7T4/0.jpg)](https://youtu.be/myussRHO7T4)
+*Videoyu izlemek için görsele tıklayın.*
 
 ## 🛠️ Kullanılan Teknolojiler
 
